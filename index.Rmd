@@ -1,0 +1,59 @@
+---
+title: "Convert Rasters to INT8 Format and/or Reproject to EPSG: 32618"
+author: "Sebastián Sánchez Cuartas"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+      position: "left"
+    theme: flatly
+    highlight: tango
+---
+
+# **Introduction**
+
+This script takes all raster files in .tiff format from a folder, converts them to INT8 format, reprojects them to the EPSG: 32618 coordinate system, and then saves them in the output folder in the same format.
+
+```{r eval=FALSE}
+
+library(raster)
+
+# Input and output directories (Change these paths to your own directories)
+input_folder <- "C:/path/to/your/input_directory"
+output_folder <- "C:/path/to/your/output_directory"
+
+# Check if the output folder exists, if not, create it
+if (!file.exists(output_folder)) {
+  dir.create(output_folder, recursive = TRUE)
+}
+
+# List all .tiff files in the input folder
+tiff_files <- list.files(input_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Iterate over each .tiff file
+for (file in tiff_files) {
+  # Load the raster
+  current_raster <- raster(file)
+  
+  # Project the raster to EPSG 32618 (UTM Zone 18N, WGS84)
+  projected_raster <- projectRaster(current_raster, crs = "+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs", resample = "ngb")
+  
+  # Get the file name without the path or extension
+  file_name <- gsub(".tif", "", basename(file))
+  
+  # Create the output file name using the original file name
+  output_file_name <- paste0("EPSG_32618_", file_name, ".tif")
+  
+  # Save the projected raster as a GeoTIFF file in the output folder
+  writeRaster(projected_raster, 
+              file.path(output_folder, output_file_name), 
+              format = "GTiff", 
+              datatype = "INT1U",  # Specify data type as Int8
+              overwrite = TRUE)
+}
+
+```
